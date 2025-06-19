@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>เมนูร้านอาหาร (เวอร์ชันใหม่)</title>
+    <style>
+        body { font-family: 'Sarabun', sans-serif; margin: 0; background-color: #f7f9fc; }
+        .container { max-width: 1200px; margin: 20px auto; padding: 0 15px; }
+        h1, h2 { text-align: center; color: #333; }
+        
+        /* === CSS ที่แก้ไข: ปรับขนาดการ์ดให้เล็กลง === */
+        #menu-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px; margin-bottom: 40px;}
+        .menu-card { background-color: #fff; border-radius: 12px; box-shadow: 0 4px S12px rgba(0,0,0,0.08); cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; overflow: hidden; display: flex; flex-direction: column; }
+        .menu-card:hover { transform: translateY(-5px); box-shadow: 0 6px 16px rgba(0,0,0,0.12); }
+        .menu-card img { width: 100%; height: 130px; object-fit: cover; } /* ลดความสูงรูป */
+        .menu-card-body { padding: 15px; flex-grow: 1; }
+        .menu-card-body h3 { margin-top: 0; margin-bottom: 5px; font-size: 1.1em; } /* ลดขนาดฟอนต์ */
+        .menu-card-body p { margin: 0; color: #666; font-size: 0.85em; } /* ลดขนาดฟอนต์ */
+        
+        /* (CSS ส่วนที่เหลือเหมือนเดิม) */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); display: none; justify-content: center; align-items: center; z-index: 1000; }
+        .modal-content { background-color: #fff; padding: 20px; border-radius: 10px; width: 90%; max-width: 500px; position: relative; }
+        .modal-close { position: absolute; top: 5px; right: 15px; font-size: 2em; cursor: pointer; border: none; background: none; }
+        .option-group { margin-bottom: 20px; }
+        .option-group h4 { margin: 0 0 10px 0; border-bottom: 1px solid #eee; padding-bottom: 5px; }
+        .option-item { display: flex; justify-content: space-between; margin-bottom: 5px; }
+        #modal-footer { margin-top: 20px; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #eee; padding-top: 15px; }
+        #modal-price { font-size: 1.4em; font-weight: bold; }
+        #add-to-cart-btn { background-color: #e67e22; color: white; border: none; padding: 12px 20px; border-radius: 5px; cursor: pointer; font-family: 'Sarabun', sans-serif; font-weight: bold; font-size: 1em; }
+        .cart-container { background-color: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+        
+        /* === CSS ที่เพิ่มเข้ามา: ตัวเลือกทานที่ร้าน/กลับบ้าน === */
+        .order-type-group { display: flex; justify-content: center; gap: 20px; padding: 15px 0; border-bottom: 1px solid #eee; margin-bottom: 20px; }
+        .order-type-group label { font-weight: bold; cursor: pointer; }
+
+        /* (CSS ส่วนตะกร้าเหมือนเดิม) */
+        .table-selector-group { text-align: center; }
+        .table-selector-group label { font-weight: bold; margin-right: 10px; }
+        #table-selector { padding: 8px; border-radius: 5px; border: 1px solid #ccc; font-family: 'Sarabun', sans-serif; font-size: 1em; }
+        #cart-items { list-style-type: none; padding: 0; }
+        .cart-item { display: flex; justify-content: space-between; padding: 10px 5px; border-bottom: 1px dotted #ccc; }
+        .cart-item-name { font-weight: bold; }
+        .cart-item-details { font-size: 0.8em; color: #777; }
+        .cart-total { text-align: right; font-size: 1.2em; font-weight: bold; margin-top: 20px; }
+        #confirm-order-btn { display: block; width: 100%; padding: 15px; font-size: 1.2em; background-color: #27ae60; color: white; border: none; border-radius: 5px; cursor: pointer; margin-top: 20px; }
+    </style>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700&display=swap">
+</head>
+<body>
+    <div class="container">
+        <h1>เมนูของเรา</h1>
+        <div id="menu-grid"></div>
+        <div class="cart-container">
+            <h2>สรุปรายการอาหาร</h2>
+            <div class="order-type-group">
+                <input type="radio" id="dine-in" name="order-type" value="ทานที่ร้าน" checked>
+                <label for="dine-in">ทานที่ร้าน</label>
+                <input type="radio" id="takeaway" name="order-type" value="กลับบ้าน">
+                <label for="takeaway">กลับบ้าน</label>
+            </div>
+            <div class="table-selector-group">
+                <label for="table-selector">เลือกหมายเลขโต๊ะ:</label>
+                <select id="table-selector"><option value="" disabled selected>-- กรุณาเลือกโต๊ะ --</option></select>
+            </div>
+            <ul id="cart-items"><p style="text-align:center; color: #888;">ยังไม่มีรายการ</p></ul>
+            <div class="cart-total">ยอดรวม: <span id="total-price">0</span> บาท</div>
+            <button id="confirm-order-btn">ยืนยันและส่งออเดอร์</button>
+        </div>
+    </div>
+    <div id="options-modal" class="modal-overlay"> </div>
+
+    <script>
+    // === JavaScript ที่แก้ไข: เพิ่มเมนูอาหาร และจัดการตัวเลือกกลับบ้าน ===
+    const menuData = [
+        // เมนูเดิม
+        { id: 'krapow', name: 'ผัดกะเพรา', description: 'ผัดกะเพรารสจัดจ้าน', basePrice: 50, imageUrl: 'https://img.wongnai.com/p/1920x0/2019/07/11/0531b46328cb4a8f9f598c4393437341.jpg', options: [ { title: 'เนื้อสัตว์', type: 'radio', items: [ { name: 'หมูสับ', priceModifier: 0 }, { name: 'หมูกรอบ', priceModifier: 10 }, { name: 'ไก่', priceModifier: 0 }, { name: 'ทะเล', priceModifier: 15 } ] }, { title: 'ของเพิ่มเติม', type: 'checkbox', items: [ { name: 'ไข่ดาว', priceModifier: 10 }, { name: 'ไข่เจียว', priceModifier: 15 } ] } ] },
+        { id: 'fried-rice', name: 'ข้าวผัด', description: 'ข้าวผัดหอมกรุ่น ใส่ไข่และคะน้า', basePrice: 50, imageUrl: 'https://img.wongnai.com/p/1920x0/2021/11/14/d976722d721142c68f4453488734dd27.jpg', options: [ { title: 'เนื้อสัตว์', type: 'radio', items: [ { name: 'หมู', priceModifier: 0 }, { name: 'กุ้ง', priceModifier: 10 }, { name: 'ปู', priceModifier: 15 } ] }] },
+        { id: 'pad-see-ew', name: 'ผัดซีอิ๊ว', description: 'เส้นใหญ่ผัดนุ่ม', basePrice: 55, imageUrl: 'https://img.wongnai.com/p/1920x0/2018/01/24/76eb5f1e33a34460912cb8493a386927.jpg', options: [ { title: 'เนื้อสัตว์', type: 'radio', items: [ { name: 'หมู', priceModifier: 0 }, { name: 'ไก่', priceModifier: 0 }, { name: 'ทะเล', priceModifier: 10 } ] }] },
+        { id: 'omlet-rice', name: 'ข้าวไข่เจียว', description: 'เลือกเครื่องได้', basePrice: 35, imageUrl: 'https://img.wongnai.com/p/1920x0/2021/08/29/e8248a3c8623405b82c2b03f0b127376.jpg', options: [ { title: 'เครื่อง', type: 'checkbox', items: [ { name: 'หมูสับ', priceModifier: 10 }, { name: 'ปูอัด', priceModifier: 10 } ] }] },
+        // เมนูใหม่
+        { id: 'kana-moo-krob', name: 'คะน้าหมูกรอบ', description: 'คะน้าสดกรอบกับหมูกรอบ', basePrice: 60, imageUrl: 'https://img.wongnai.com/p/1920x0/2021/03/10/892a0a20a66d4b299e52c80327f42c26.jpg' },
+        { id: 'pad-prik-gaeng', name: 'ผัดพริกแกง', description: 'รสชาติเข้มข้น', basePrice: 55, imageUrl: 'https://img.wongnai.com/p/1920x0/2020/02/26/5d544f128c9447239031c238b9754f15.jpg', options: [ { title: 'เนื้อสัตว์', type: 'radio', items: [ { name: 'หมู', priceModifier: 0 }, { name: 'ไก่', priceModifier: 0 }, { name: 'เนื้อ', priceModifier: 10 } ] }] },
+        { id: 'garlic-pork', name: 'ข้าวหมูกระเทียม', description: 'หมูนุ่มหอมกระเทียมพริกไทย', basePrice: 55, imageUrl: 'https://img.wongnai.com/p/1920x0/2021/08/21/f2130113c5f448bb95b0e01438f280a9.jpg', options: [ { title: 'เพิ่มเติม', type: 'checkbox', items: [ { name: 'ไข่ดาว', priceModifier: 10 } ] }] },
+        { id: 'rad-na', name: 'ราดหน้า', description: 'น้ำราดหน้ากลมกล่อม', basePrice: 55, imageUrl: 'https://img.wongnai.com/p/1920x0/2018/03/05/96c559b34a1a45f2be13de5552393282.jpg', options: [ { title: 'เส้น', type: 'radio', items: [ { name: 'เส้นใหญ่', priceModifier: 0 }, { name: 'หมี่กรอบ', priceModifier: 5 } ] }] },
+        { id: 'suki', name: 'สุกี้', description: 'เลือกได้ทั้งแห้งและน้ำ', basePrice: 60, imageUrl: 'https://img.wongnai.com/p/1920x0/2021/09/20/d1886c96a75f484894334f55f4104d57.jpg', options: [ { title: 'ประเภท', type: 'radio', items: [ { name: 'แห้ง', priceModifier: 0 }, { name: 'น้ำ', priceModifier: 0 } ] }] },
+        { id: 'tom-yum-fried-rice', name: 'ข้าวผัดต้มยำ', description: 'ข้าวผัดรสแซ่บ', basePrice: 60, imageUrl: 'https://img.wongnai.com/p/1920x0/2020/07/22/de1155a3089445199651582e30349c82.jpg' },
+        { id: 'pad-kee-mao', name: 'ผัดขี้เมา', description: 'เผ็ดร้อนถึงใจ', basePrice: 55, imageUrl: 'https://img.wongnai.com/p/1920x0/2018/11/05/52a8a729e2f44c06b2a4c54622080f4f.jpg', options: [ { title: 'เนื้อสัตว์', type: 'radio', items: [ { name: 'หมู', priceModifier: 0 }, { name: 'ทะเล', priceModifier: 15 } ] }] },
+        { id: 'pad-phong-kari', name: 'ผัดผงกะหรี่', description: 'หอมมันกลมกล่อม', basePrice: 65, imageUrl: 'https://img.wongnai.com/p/1920x0/2021/07/04/b70b5b15b6304d9e9e60249c11822839.jpg' },
+        { id: 'clear-soup', name: 'แกงจืดเต้าหู้หมูสับ', description: 'ซดคล่องคอ', basePrice: 50, imageUrl: 'https://img.wongnai.com/p/1920x0/2021/08/13/a34493f0190547a0917639430c33d7d7.jpg' },
+        { id: 'larb-moo', name: 'ลาบหมู', description: 'แซ่บสไตล์อีสาน', basePrice: 60, imageUrl: 'https://img.wongnai.com/p/1920x0/2021/02/10/a5f973e8784d414fb38a2e557291a18c.jpg' },
+        { id: 'pad-cha', name: 'ผัดฉ่าทะเล', description: 'สมุนไพรหอมๆ', basePrice: 70, imageUrl: 'https://img.wongnai.com/p/1920x0/2021/08/29/73a9719114e9415c8e31de610c144073.jpg' },
+        { id: 'cashew-chicken', name: 'ไก่ผัดเม็ดมะม่วง', description: 'รสชาติสามรส', basePrice: 65, imageUrl: 'https://img.wongnai.com/p/1920x0/2021/08/29/97f648618a8b4097a9f8f41666ff0571.jpg' }
+    ];
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // ... (ส่วนของตัวแปรและฟังก์ชันต่างๆ เหมือนเดิม) ...
+        
+        // === ส่วนที่แก้ไข: จัดการตัวเลือกทานที่ร้าน/กลับบ้าน ===
+        const dineInRadio = document.getElementById('dine-in');
+        const takeawayRadio = document.getElementById('takeaway');
+        const tableSelectorGroup = document.querySelector('.table-selector-group');
+
+        dineInRadio.addEventListener('change', () => {
+            if (dineInRadio.checked) {
+                tableSelectorGroup.style.display = 'block';
+            }
+        });
+        takeawayRadio.addEventListener('change', () => {
+            if (takeawayRadio.checked) {
+                tableSelectorGroup.style.display = 'none';
+            }
+        });
+        
+        // แก้ไข Event Listener ของปุ่ม "ยืนยันและส่งออเดอร์"
+        confirmOrderBtn.addEventListener('click', function() {
+            const orderType = document.querySelector('input[name="order-type"]:checked').value;
+            const selectedTable = tableSelector.value;
+
+            if (orderType === 'ทานที่ร้าน' && !selectedTable) {
+                alert('กรุณาเลือกหมายเลขโต๊ะก่อนครับ!');
+                return;
+            }
+            if (mainCart.length === 0) {
+                alert('กรุณาเลือกรายการอาหารก่อนครับ');
+                return;
+            }
+            
+            const serverUrl = 'https://restaurant-api-eua8.onrender.com/submit-order'; // URL Server
+            
+            // เพิ่ม orderType และจัดการเลขโต๊ะ
+            const orderPayload = {
+                table: orderType === 'ทานที่ร้าน' ? selectedTable : 'N/A',
+                orderType: orderType,
+                order: mainCart
+            };
+
+            fetch(serverUrl, { method: 'POST', headers: { 'Content-Type': 'application/json', }, body: JSON.stringify(orderPayload) })
+            .then(response => response.json())
+            .then(data => {
+                const confirmationMessage = orderType === 'ทานที่ร้าน' ? `โต๊ะ ${selectedTable}` : 'กลับบ้าน';
+                alert(`ส่งออเดอร์สำหรับ ${confirmationMessage} เรียบร้อยแล้ว!`);
+                mainCart = []; renderMainCart(); tableSelector.value = "";
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+                alert('เกิดข้อผิดพลาด: ไม่สามารถส่งออเดอร์ได้ กรุณาติดต่อพนักงาน');
+            });
+        });
+
+        // (โค้ดส่วนที่เหลือเหมือนเดิมทั้งหมด)
+    });
+    </script>
+</body>
+</html>
