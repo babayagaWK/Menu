@@ -12,7 +12,8 @@
         
         /* Mode Selection Overlay */
         #mode-selection-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 2000; color: white; }
-        .mode-button { background-color: var(--primary-color); color: white; border: none; padding: 20px 40px; font-size: 1.5em; border-radius: 10px; cursor: pointer; margin: 10px; font-family: 'Sarabun', sans-serif; font-weight: bold; width: 300px; }
+        .mode-button { background-color: var(--primary-color); color: white; border: none; padding: 20px 40px; font-size: 1.5em; border-radius: 10px; cursor: pointer; margin: 10px; font-family: 'Sarabun', sans-serif; font-weight: bold; width: 300px; transition: background-color 0.2s; }
+        .mode-button:hover { background-color: #e74c3c; }
         
         /* Main Content (hidden initially) */
         #main-content { display: none; }
@@ -27,16 +28,17 @@
         .menu-item-price { font-weight: bold; font-size: 1.1em; color: var(--primary-color); }
         
         /* Modal Styles */
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); display: none; justify-content: center; align-items: center; z-index: 1000; }
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); display: none; justify-content: center; align-items: center; z-index: 3000; }
         .modal-content { background-color: var(--card-bg); padding: 25px; border-radius: 10px; width: 90%; max-width: 500px; position: relative; max-height: 90vh; display: flex; flex-direction: column; }
+        .modal-header { padding-bottom: 15px; border-bottom: 1px solid #eee; }
         .modal-header h2 { margin: 0; text-align: left; }
         .modal-close { position: absolute; top: 10px; right: 15px; font-size: 2em; cursor: pointer; border: none; background: none; }
-        .modal-body { overflow-y: auto; padding: 20px 0; }
+        .modal-body { overflow-y: auto; padding: 20px 5px 20px 0; }
         .option-group { margin-bottom: 20px; }
         .option-group h4 { margin: 0 0 10px 0; border-bottom: 1px solid #eee; padding-bottom: 5px; }
         .option-group h4 small { font-weight: normal; color: #999; }
         .option-item { display: flex; justify-content: space-between; margin-bottom: 8px; align-items: center;}
-        .option-item label { cursor: pointer; }
+        .option-item label { cursor: pointer; margin-left: 8px; }
         #modal-footer { margin-top: auto; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #eee; padding-top: 15px; }
         #modal-price { font-size: 1.4em; font-weight: bold; color: var(--primary-color); }
         #add-to-cart-btn { background-color: var(--primary-color); color: white; border: none; padding: 12px 20px; border-radius: 5px; cursor: pointer; font-family: 'Sarabun', sans-serif; font-weight: bold; font-size: 1em; }
@@ -45,9 +47,11 @@
         /* Cart Styles */
         .cart-container { background-color: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); margin-top: 40px; }
         .order-options-group { padding: 15px 0; border-bottom: 1px solid #eee; margin-bottom: 20px; }
-        .order-mode-display { font-size: 1.2em; text-align: center; font-weight: bold; margin-bottom: 15px; }
-        #dine-in-controls, #online-controls { display: none; } /* ซ่อนไว้ก่อน */
+        #dine-in-controls, #online-controls { display: none; }
         #cart-items { list-style-type: none; padding: 0; }
+        .cart-item { display: flex; justify-content: space-between; padding: 10px 5px; border-bottom: 1px dotted #ccc; }
+        .cart-item-name { font-weight: bold; }
+        .cart-item-details { font-size: 0.8em; color: #777; margin-left: 5px;}
         #address-group { margin-top: 15px; display: none; }
         #address-group label { display: block; margin-bottom: 5px; font-weight: bold; }
         #address-input { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
@@ -65,7 +69,7 @@
 
     <div id="main-content">
         <div class="container">
-            <h1 id="page-title"></h1>
+            <h1 id="page-title">เมนูร้าน</h1>
             <div id="menu-container"></div>
             <div class="cart-container">
                 <h2>สรุปรายการอาหาร</h2>
@@ -92,42 +96,42 @@
         </div>
     </div>
     
-    <div id="options-modal" class="modal-overlay"> </div>
+    <div id="options-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header"><h2 id="modal-title"></h2></div>
+            <div id="modal-body"></div>
+            <div id="modal-footer">
+                <span id="modal-price"></span>
+                <button id="add-to-cart-btn">เพิ่มลงตะกร้า</button>
+            </div>
+            <button class="modal-close">&times;</button>
+        </div>
+    </div>
 
     <script>
-    // DATA: โครงสร้างข้อมูลเมนูใหม่ทั้งหมด
-    const menuData = [
-        { category: "เมนูข้าว", items: [
-            { name: 'ผัดกะเพรา', basePrice: 40, options: [ { title: 'ขนาด', type: 'radio', required: true, items: [{name: 'ธรรมดา', priceModifier: 0}, {name: 'พิเศษ', priceModifier: 5}] }, { title: 'เนื้อสัตว์', type: 'radio', required: true, items: [{name: 'หมูสับ', priceModifier: 0}, {name: 'หมูชิ้น', priceModifier: 0}, {name: 'หมูกรอบ', priceModifier: 10}] } ] },
-            { name: 'ผัดคะน้า', basePrice: 40, options: [ { title: 'ขนาด', type: 'radio', required: true, items: [{name: 'ธรรมดา', priceModifier: 0}, {name: 'พิเศษ', priceModifier: 5}] }, { title: 'เนื้อสัตว์', type: 'radio', required: true, items: [{name: 'หมูชิ้น', priceModifier: 0}, {name: 'หมูกรอบ', priceModifier: 10}] } ] },
-            { name: 'ผัดพริกแกง', basePrice: 40, options: [ { title: 'ขนาด', type: 'radio', required: true, items: [{name: 'ธรรมดา', priceModifier: 0}, {name: 'พิเศษ', priceModifier: 5}] }, { title: 'เนื้อสัตว์', type: 'radio', required: true, items: [{name: 'หมูชิ้น', priceModifier: 0}, {name: 'ไก่', priceModifier: 0}] } ] },
-            { name: 'ผัดพริกเผา', basePrice: 40, options: [ { title: 'ขนาด', type: 'radio', required: true, items: [{name: 'ธรรมดา', priceModifier: 0}, {name: 'พิเศษ', priceModifier: 5}] }, { title: 'เนื้อสัตว์', type: 'radio', required: true, items: [{name: 'หมูชิ้น', priceModifier: 0}, {name: 'หมูกรอบ', priceModifier: 10}] } ] },
-            { name: 'ข้าวไข่เจียว', basePrice: 40, options: [ { title: 'ขนาด', type: 'radio', required: true, items: [{name: 'ธรรมดา', priceModifier: 0}, {name: 'พิเศษ', priceModifier: 5}] }, { title: 'เครื่อง', type: 'radio', required: false, items: [{name: 'หมูสับ', priceModifier: 5}] } ] },
-            { name: 'ข้าวหมูทอดกระเทียม', basePrice: 40, options: [ { title: 'ขนาด', type: 'radio', required: true, items: [{name: 'ธรรมดา', priceModifier: 0}, {name: 'พิเศษ', priceModifier: 5}] } ] },
-            { name: 'ผัดพริกสด', basePrice: 40, options: [ { title: 'ขนาด', type: 'radio', required: true, items: [{name: 'ธรรมดา', priceModifier: 0}, {name: 'พิเศษ', priceModifier: 5}] }, { title: 'เนื้อสัตว์', type: 'radio', required: true, items: [{name: 'หมู', priceModifier: 0}, {name: 'ไก่', priceModifier: 0}] } ] },
-            { name: 'ข้าวต้ม', basePrice: 40, options: [ { title: 'ขนาด', type: 'radio', required: true, items: [{name: 'ธรรมดา', priceModifier: 0}, {name: 'พิเศษ', priceModifier: 5}] }, { title: 'เครื่อง', type: 'radio', required: true, items: [{name: 'หมู', priceModifier: 0}, {name: 'ปลา', priceModifier: 10}, {name: 'ทะเล', priceModifier: 15}] } ] },
-        ]},
-        { category: "เมนูเส้น", items: [
-            { name: 'ผัดซีอิ๊ว', basePrice: 40, options: [ { title: 'ขนาด', type: 'radio', required: true, items: [{name: 'ธรรมดา', priceModifier: 0}, {name: 'พิเศษ', priceModifier: 5}] }, { title: 'เส้น', type: 'radio', required: true, items: [{name: 'เส้นใหญ่', priceModifier: 0}, {name: 'เส้นหมี่', priceModifier: 0}] } ] },
-            { name: 'ผัดมาม่า', basePrice: 40, options: [ { title: 'ขนาด', type: 'radio', required: true, items: [{name: 'ธรรมดา', priceModifier: 0}, {name: 'พิเศษ', priceModifier: 5}] }, { title: 'รสชาติ', type: 'radio', required: true, items: [{name: 'ปกติ', priceModifier: 0}, {name: 'กะเพรา', priceModifier: 5}] } ] },
-            { name: 'สุกี้', basePrice: 40, options: [ { title: 'ขนาด', type: 'radio', required: true, items: [{name: 'ธรรมดา', priceModifier: 0}, {name: 'พิเศษ', priceModifier: 5}] }, { title: 'ประเภท', type: 'radio', required: true, items: [{name: 'น้ำ', priceModifier: 0}, {name: 'แห้ง', priceModifier: 0}] } ] },
-        ]},
-        { category: "เมนูก๋วยเตี๋ยว", items: [
-            { name: 'ก๋วยเตี๋ยว', basePrice: 40, options: [ { title: 'ขนาด', type: 'radio', required: true, items: [{name: 'ธรรมดา', priceModifier: 0}, {name: 'พิเศษ', priceModifier: 5}] }, { title: 'เส้น', type: 'radio', required: true, items: [{name: 'เส้นเล็ก', priceModifier: 0}, {name: 'เส้นใหญ่', priceModifier: 0}, {name: 'หมี่เหลือง', priceModifier: 0}, {name: 'มาม่า', priceModifier: 0}, {name: 'หมี่ขาว', priceModifier: 0}] }, { title: 'น้ำซุป', type: 'radio', required: true, items: [{name: 'น้ำใส', priceModifier: 0}, {name: 'น้ำตก', priceModifier: 0}, {name: 'เย็นตาโฟ', priceModifier: 0}, {name: 'ต้มยำ', priceModifier: 0}] } ] },
-        ]},
-        { category: "เมนูพิเศษ", items: [
-            { name: 'น้ำเงี้ยว', basePrice: 30, options: [ { title: 'ขนาด', type: 'radio', required: true, items: [{name: 'ธรรมดา', priceModifier: 0}, {name: 'พิเศษ', priceModifier: 5}] }, { title: 'เส้น', type: 'radio', required: true, items: [{name: 'เส้นใหญ่', priceModifier: 0}, {name: 'ขนมจีน', priceModifier: 0}] } ] },
-        ]}
-    ];
-    const globalAddons = [
-        { title: 'เพิ่มพิเศษ', type: 'checkbox', required: false, items: [
-            { name: 'ไข่ดาว', priceModifier: 10 },
-            { name: 'แคบหมู', priceModifier: 10 }
-        ]}
-    ];
+    const menuData=[{category:"เมนูข้าว",items:[{name:"ผัดกะเพรา",basePrice:40,options:[{title:"ขนาด",type:"radio",required:!0,items:[{name:"ธรรมดา",priceModifier:0},{name:"พิเศษ",priceModifier:5}]},{title:"เนื้อสัตว์",type:"radio",required:!0,items:[{name:"หมูสับ",priceModifier:0},{name:"หมูชิ้น",priceModifier:0},{name:"หมูกรอบ",priceModifier:10}]}]},{name:"ผัดคะน้า",basePrice:40,options:[{title:"ขนาด",type:"radio",required:!0,items:[{name:"ธรรมดา",priceModifier:0},{name:"พิเศษ",priceModifier:5}]},{title:"เนื้อสัตว์",type:"radio",required:!0,items:[{name:"หมูชิ้น",priceModifier:0},{name:"หมูกรอบ",priceModifier:10}]}]},{name:"ผัดพริกแกง",basePrice:40,options:[{title:"ขนาด",type:"radio",required:!0,items:[{name:"ธรรมดา",priceModifier:0},{name:"พิเศษ",priceModifier:5}]},{title:"เนื้อสัตว์",type:"radio",required:!0,items:[{name:"หมูชิ้น",priceModifier:0},{name:"ไก่",priceModifier:0}]}]},{name:"ผัดพริกเผา",basePrice:40,options:[{title:"ขนาด",type:"radio",required:!0,items:[{name:"ธรรมดา",priceModifier:0},{name:"พิเศษ",priceModifier:5}]},{title:"เนื้อสัตว์",type:"radio",required:!0,items:[{name:"หมูชิ้น",priceModifier:0},{name:"หมูกรอบ",priceModifier:10}]}]},{name:"ข้าวไข่เจียว",basePrice:40,options:[{title:"ขนาด",type:"radio",required:!0,items:[{name:"ธรรมดา",priceModifier:0},{name:"พิเศษ",priceModifier:5}]},{title:"เครื่อง",type:"radio",required:!1,items:[{name:"หมูสับ",priceModifier:5}]}]},{name:"ข้าวหมูทอดกระเทียม",basePrice:40,options:[{title:"ขนาด",type:"radio",required:!0,items:[{name:"ธรรมดา",priceModifier:0},{name:"พิเศษ",priceModifier:5}]}]},{name:"ผัดพริกสด",basePrice:40,options:[{title:"ขนาด",type:"radio",required:!0,items:[{name:"ธรรมดา",priceModifier:0},{name:"พิเศษ",priceModifier:5}]},{title:"เนื้อสัตว์",type:"radio",required:!0,items:[{name:"หมู",priceModifier:0},{name:"ไก่",priceModifier:0}]}]},{name:"ข้าวต้ม",basePrice:40,options:[{title:"ขนาด",type:"radio",required:!0,items:[{name:"ธรรมดา",priceModifier:0},{name:"พิเศษ",priceModifier:5}]},{title:"เครื่อง",type:"radio",required:!0,items:[{name:"หมู",priceModifier:0},{name:"ปลา",priceModifier:10},{name:"ทะเล",priceModifier:15}]}]}]},{category:"เมนูเส้น",items:[{name:"ผัดซีอิ๊ว",basePrice:40,options:[{title:"ขนาด",type:"radio",required:!0,items:[{name:"ธรรมดา",priceModifier:0},{name:"พิเศษ",priceModifier:5}]},{title:"เส้น",type:"radio",required:!0,items:[{name:"เส้นใหญ่",priceModifier:0},{name:"เส้นหมี่",priceModifier:0}]}]},{name:"ผัดมาม่า",basePrice:40,options:[{title:"ขนาด",type:"radio",required:!0,items:[{name:"ธรรมดา",priceModifier:0},{name:"พิเศษ",priceModifier:5}]},{title:"รสชาติ",type:"radio",required:!0,items:[{name:"ปกติ",priceModifier:0},{name:"กะเพรา",priceModifier:5}]}]},{name:"สุกี้",basePrice:40,options:[{title:"ขนาด",type:"radio",required:!0,items:[{name:"ธรรมดา",priceModifier:0},{name:"พิเศษ",priceModifier:5}]},{title:"ประเภท",type:"radio",required:!0,items:[{name:"น้ำ",priceModifier:0},{name:"แห้ง",priceModifier:0}]}]}]},{category:"เมนูก๋วยเตี๋ยว",items:[{name:"ก๋วยเตี๋ยว",basePrice:40,options:[{title:"ขนาด",type:"radio",required:!0,items:[{name:"ธรรมดา",priceModifier:0},{name:"พิเศษ",priceModifier:5}]},{title:"เส้น",type:"radio",required:!0,items:[{name:"เส้นเล็ก",priceModifier:0},{name:"เส้นใหญ่",priceModifier:0},{name:"หมี่เหลือง",priceModifier:0},{name:"มาม่า",priceModifier:0},{name:"หมี่ขาว",priceModifier:0}]},{title:"น้ำซุป",type:"radio",required:!0,items:[{name:"น้ำใส",priceModifier:0},{name:"น้ำตก",priceModifier:0},{name:"เย็นตาโฟ",priceModifier:0},{name:"ต้มยำ",priceModifier:0}]}]}]},{category:"เมนูพิเศษ",items:[{name:"น้ำเงี้ยว",basePrice:30,options:[{title:"ขนาด",type:"radio",required:!0,items:[{name:"ธรรมดา",priceModifier:0},{name:"พิเศษ",priceModifier:5}]},{title:"เส้น",type:"radio",required:!0,items:[{name:"เส้นใหญ่",priceModifier:0},{name:"ขนมจีน",priceModifier:0}]}]}]}];
+    const globalAddons=[{title:"เพิ่มพิเศษ",type:"checkbox",required:!1,items:[{name:"ไข่ดาว",priceModifier:10},{name:"แคบหมู",priceModifier:10}]}];
+    
+    document.addEventListener("DOMContentLoaded",function(){
+        const modeSelectionOverlay=document.getElementById("mode-selection-overlay"),mainContent=document.getElementById("main-content"),modeDineInBtn=document.getElementById("mode-dine-in"),modeOnlineBtn=document.getElementById("mode-online"),pageTitle=document.getElementById("page-title"),menuContainer=document.getElementById("menu-container"),dineInControls=document.getElementById("dine-in-controls"),onlineControls=document.getElementById("online-controls"),tableSelector=document.getElementById("table-selector"),deliveryRadio=document.getElementById("delivery"),pickupRadio=document.getElementById("pickup"),addressGroup=document.getElementById("address-group"),confirmOrderBtn=document.getElementById("confirm-order-btn"),cartItemsEl=document.getElementById("cart-items"),mainTotalPriceEl=document.getElementById("total-price"),modal=document.getElementById("options-modal"),modalCloseBtn=document.querySelector(".modal-close"),modalTitle=document.getElementById("modal-title"),modalBody=document.getElementById("modal-body"),modalPrice=document.getElementById("modal-price"),addToCartBtn=document.getElementById("add-to-cart-btn");
+        let currentItem=null,mainCart=[],currentOrderMode="";
 
-    document.addEventListener('DOMContentLoaded', function() {
-        // --- (โค้ด JavaScript ทั้งหมดจะถูกใส่ที่นี่ในคำตอบถัดไป) ---
+        function renderMenu(){menuContainer.innerHTML="";menuData.forEach(category=>{const categoryTitle=document.createElement("h2");categoryTitle.className="category-title";categoryTitle.innerText=category.category;menuContainer.appendChild(categoryTitle);category.items.forEach(item=>{const itemRow=document.createElement("div");itemRow.className="menu-item-row";itemRow.dataset.name=item.name;itemRow.innerHTML=`<div class="menu-item-info"><h4>${item.name}</h4><p>${item.options?"มีตัวเลือกเพิ่มเติม":"พร้อมเสิร์ฟ"}</p></div><div class="menu-item-action"><span class="menu-item-price">${item.basePrice} บาท</span></div>`;menuContainer.appendChild(itemRow)})})}
+        function openModalForItem(itemName){for(const category of menuData){const foundItem=category.items.find(item=>item.name===itemName);if(foundItem){currentItem=foundItem;break}}
+        if(!currentItem)return;modalTitle.innerText=currentItem.name;modalBody.innerHTML="";const allOptions=[...currentItem.options||[],...globalAddons];allOptions.forEach(group=>{const groupDiv=document.createElement("div");groupDiv.className="option-group";const requiredText=group.required?'<small> (ต้องเลือก)</small>':"";groupDiv.innerHTML=`<h4>${group.title}${requiredText}</h4>`;group.items.forEach(option=>{const inputId=`option-${currentItem.name}-${group.title}-${option.name}`.replace(/\s/g,"");const itemDiv=document.createElement("div");itemDiv.className="option-item";itemDiv.innerHTML=`<div><input type="${group.type}" id="${inputId}" name="${group.title}" value="${option.name}" data-price-modifier="${option.priceModifier}" ${group.required?"required":""}><label for="${inputId}">${option.name}</label></div><span>+${option.priceModifier} บาท</span>`;groupDiv.appendChild(itemDiv)});modalBody.appendChild(groupDiv)});updateModalPrice();checkRequiredOptions();modal.style.display="flex"}
+        function updateModalPrice(){if(!currentItem)return;let total=currentItem.basePrice;const selectedOptions=modalBody.querySelectorAll("input:checked");selectedOptions.forEach(input=>{total+=parseInt(input.dataset.priceModifier)});modalPrice.innerText=`${total} บาท`}
+        function checkRequiredOptions(){if(!currentItem)return;let allRequiredSelected=!0;const allOptions=[...currentItem.options||[],...globalAddons];allOptions.forEach(group=>{if(group.required){const inputs=modalBody.querySelectorAll(`input[name="${group.title}"]`);const isSelected=Array.from(inputs).some(input=>input.checked);if(!isSelected)allRequiredSelected=!1}});addToCartBtn.disabled=!allRequiredSelected}
+        function handleAddToCart(){if(!currentItem||addToCartBtn.disabled)return;const selectedOptions=modalBody.querySelectorAll("input:checked");let finalPrice=currentItem.basePrice;let detailsArray=[];selectedOptions.forEach(input=>{finalPrice+=parseInt(input.dataset.priceModifier);detailsArray.push(input.value)});const cartItem={name:currentItem.name,details:detailsArray.join(", "),price:finalPrice};mainCart.push(cartItem);renderMainCart();closeModal()}
+        function renderMainCart(){cartItemsEl.innerHTML="";if(mainCart.length===0){cartItemsEl.innerHTML='<p style="text-align:center; color: #888;">ยังไม่มีรายการ</p>';mainTotalPriceEl.innerText=0;return}
+        let grandTotal=0;mainCart.forEach(item=>{const li=document.createElement("li");li.className="cart-item";li.innerHTML=`<div><div class="cart-item-name">${item.name}</div><div class="cart-item-details">${item.details}</div></div><span>${item.price} บาท</span>`;cartItemsEl.appendChild(li);grandTotal+=item.price});mainTotalPriceEl.innerText=grandTotal}
+        function closeModal(){modal.style.display="none"}
+        function selectMode(mode){currentOrderMode=mode;modeSelectionOverlay.style.display="none";mainContent.style.display="block";if(mode==="dine-in"){pageTitle.innerText="เมนูสำหรับทานที่ร้าน";dineInControls.style.display="block";onlineControls.style.display="none"}else{pageTitle.innerText="เมนูสำหรับสั่งออนไลน์";dineInControls.style.display="none";onlineControls.style.display="block"}
+        renderMenu()}
+        modeDineInBtn.addEventListener("click",()=>selectMode("dine-in"));modeOnlineBtn.addEventListener("click",()=>selectMode("online"));menuContainer.addEventListener("click",event=>{const row=event.target.closest(".menu-item-row");if(row)openModalForItem(row.dataset.name)});modalCloseBtn.addEventListener("click",closeModal);modal.addEventListener("click",event=>{if(event.target===modal)closeModal()});modalBody.addEventListener("change",checkRequiredOptions);modalBody.addEventListener("change",updateModalPrice);addToCartBtn.addEventListener("click",handleAddToCart);deliveryRadio.addEventListener("change",()=>{addressGroup.style.display=deliveryRadio.checked?"block":"none"});pickupRadio.addEventListener("change",()=>{addressGroup.style.display="none"});
+        confirmOrderBtn.addEventListener("click",function(){let orderType,tableNumber,deliveryAddress,isValid=!0;if(currentOrderMode==="dine-in"){orderType="ทานที่ร้าน";tableNumber=tableSelector.value;if(!tableNumber){alert("กรุณาเลือกหมายเลขโต๊ะ!");isValid=!1}}else{orderType=document.querySelector('input[name="online-order-type"]:checked').value;if(orderType==="ส่งที่บ้าน"){deliveryAddress=document.getElementById("address-input").value;if(!deliveryAddress.trim()){alert("กรุณากรอกที่อยู่สำหรับจัดส่ง!");isValid=!1}}}
+        if(mainCart.length===0){alert("กรุณาเลือกรายการอาหารก่อนครับ");isValid=!1}
+        if(!isValid)return;const serverUrl="https://restaurant-api-eua8.onrender.com/submit-order";const orderPayload={orderType:orderType,table:tableNumber||"N/A",deliveryAddress:deliveryAddress||"",order:mainCart};fetch(serverUrl,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(orderPayload)}).then(response=>response.ok?response.json():Promise.reject("Server error")).then(data=>{alert(`ส่งออเดอร์เรียบร้อยแล้ว!`);mainCart=[];renderMainCart();tableSelector.value=""}).catch(error=>{console.error("Error:",error);alert("เกิดข้อผิดพลาด: ไม่สามารถส่งออเดอร์ได้ (เซิร์ฟเวอร์ยังไม่รองรับข้อมูลใหม่นี้)")})});
+        for(let i=1;i<=20;i++){const option=document.createElement("option");option.value=i;option.innerText=`โต๊ะ ${i}`;tableSelector.appendChild(option)}
     });
     </script>
 </body>
