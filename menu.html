@@ -149,7 +149,34 @@
         function updateModalPrice() { if (!currentItem) return; let e = currentItem.basePrice; const t = modalBody.querySelectorAll("input:checked"); t.forEach(t => { e += parseInt(t.dataset.priceModifier) }), modalPrice.innerText = `${e} บาท` }
         function checkRequiredOptions() { if (!currentItem) return; let e = !0; const t = [...currentItem.options || [], ...globalAddons]; t.forEach(t => { if (t.required) { const o = modalBody.querySelectorAll(`input[name="${t.title}"]`), i = Array.from(o).some(e => e.checked); i || (e = !1) } }), addToCartBtn.disabled = !e }
         function handleAddToCart() { if (!currentItem || addToCartBtn.disabled) return; const e = modalBody.querySelectorAll("input:checked"); let t = currentItem.basePrice; let o = []; e.forEach(e => { t += parseInt(e.dataset.priceModifier), o.push(e.value) }); const i = { name: currentItem.name, details: o.join(", "), price: t }; mainCart.push(i), renderMainCart(), closeModal() }
-        function renderMainCart() { cartItemsEl.innerHTML = ""; if (0 === mainCart.length) return cartItemsEl.innerHTML = '<p style="text-align:center; color: #888;">ยังไม่มีรายการ</p>', void(mainTotalPriceEl.innerText = 0); let e = 0; mainCart.forEach(t => { const o = document.createElement("li"); o.className = "cart-item", o.innerHTML = `<div><div class="cart-item-name">${t.name}</div><div class="cart-item-details">${t.details}</div></div><span>${t.price} บาท</span>`, cartItemsEl.appendChild(o), e += t.price }), mainTotalPriceEl.innerText = e }
+        
+        function renderMainCart() {
+            cartItemsEl.innerHTML = "";
+            if (mainCart.length === 0) {
+                cartItemsEl.innerHTML = '<p style="text-align:center; color: #888;">ยังไม่มีรายการ</p>';
+                mainTotalPriceEl.innerText = 0;
+                return;
+            }
+            let total = 0;
+            mainCart.forEach((item, index) => {
+                const cartItemEl = document.createElement("li");
+                cartItemEl.className = "cart-item";
+                cartItemEl.innerHTML = `
+                    <div>
+                        <div class="cart-item-name">${item.name}</div>
+                        <div class="cart-item-details">${item.details}</div>
+                    </div>
+                    <div style="display: flex; align-items: center;">
+                        <span style="margin-right: 15px;">${item.price} บาท</span>
+                        <button class="delete-cart-item-btn" data-index="${index}" style="background: none; border: none; color: red; font-size: 1.2em; cursor: pointer;">&times;</button>
+                    </div>
+                `;
+                cartItemsEl.appendChild(cartItemEl);
+                total += item.price;
+            });
+            mainTotalPriceEl.innerText = total;
+        }
+
         function closeModal() { modal.style.display = "none" }
         function selectMode(e) { currentOrderMode = e, modeSelectionOverlay.style.display = "none", mainContent.style.display = "block", "dine-in" === e ? (pageTitle.innerText = "เมนูสำหรับทานที่ร้าน", dineInControls.style.display = "block", onlineControls.style.display = "none") : (pageTitle.innerText = "เมนูสำหรับสั่งออนไลน์", dineInControls.style.display = "none", onlineControls.style.display = "block"), renderMenu() }
 
@@ -170,6 +197,14 @@
             mainCart.push(cartItem);
             renderMainCart();
             customOrderInput.value = '';
+        });
+
+        cartItemsEl.addEventListener('click', function(event) {
+            if (event.target.classList.contains('delete-cart-item-btn')) {
+                const itemIndex = parseInt(event.target.getAttribute('data-index'));
+                mainCart.splice(itemIndex, 1);
+                renderMainCart();
+            }
         });
 
         confirmOrderBtn.addEventListener("click", function() {
